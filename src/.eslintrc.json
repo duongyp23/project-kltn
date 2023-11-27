@@ -1,0 +1,11 @@
+{
+  // ... Các cài đặt khác của bạn
+  "rules": {
+    // ... Các quy tắc khác của bạn
+    // Tắt một số cảnh báo cụ thể
+    "no-alert": "off",
+    "no-console": "off",
+    "no-debugger": "off",
+    "no-mixed-spaces-and-tabs": "off"
+  }
+}
