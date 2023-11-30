@@ -154,27 +154,31 @@ export default {
     routeMapORS() {
       if (this.startPlace != null && this.endPlace != null) {
         const apiKeyORS = '5b3ce3597851110001cf6248a9ec8adaacac40e1b95cfb05795ec418';
-        this.vehiclesORS.forEach(vehicle => {
-          vehicle.polyLine = [];
-          const apiUrl = `https://api.openrouteservice.org/v2/directions/${vehicle.mode}?api_key=${apiKeyORS}&start=${this.startPlace.lon},${this.startPlace.lat}&end=${this.endPlace.lon},${this.endPlace.lat}`;
-
+        // const apiUrl = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKeyORS}&start=${this.startPlace.lon},${this.startPlace.lat}&end=${this.endPlace.lon},${this.endPlace.lat}`;
+          //const apiUrl = `https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${apiKeyORS}&start=${this.startPlace.lon},${this.startPlace.lat}&end=${this.endPlace.lon},${this.endPlace.lat}`;
+        const apiUrl = `https://api.openrouteservice.org/v2/directions/cycling-electric?api_key=${apiKeyORS}&start=${this.startPlace.lon},${this.startPlace.lat}&end=${this.endPlace.lon},${this.endPlace.lat}`;
           fetch(apiUrl)
             .then(response => response.json())
             .then(data => {
+              debugger
               // Dữ liệu chi tiết về tuyến đường sẽ nằm trong data
               console.log(data);
               const route = data.features[0];
+              const summary = route.properties.summary;
+              console.log('Độ dài quãng đường ORS: ', summary.distance, 'm');
+              console.log('Thời gian di chuyển của ORS: ', summary.duration, 'giây');
               const geometry = route.geometry;
+              console.log('Số điểm trên đường đi của ORS: ', geometry.coordinates.length);
+              let polyline = [];
               geometry.coordinates.forEach(element => {
-                vehicle.polyLine.push([element[1], element[0]]);
+                polyline.push([element[1], element[0]]);
               });
-              vehicle.steps = route.properties.segments[0].steps;
-              this.showRoad(vehicle.polyLine, "blue");
+              
+              this.showRoad(polyline, "blue");
             })
             .catch(error => {
               console.error('Lỗi khi tìm đường:', error);
             });
-        })
       }
     },
     routeMapGraphHopper() {
@@ -182,15 +186,20 @@ export default {
         const apiKey = '46976e33-ad6f-4a8a-b07e-8f150e41a2e1';
 
         // Tạo URL API với loại phương tiện là xe máy
-        const apiUrl = `https://graphhopper.com/api/1/route?point=${this.startPlace.lat},${this.startPlace.lon}&point=${this.endPlace.lat},${this.endPlace.lon}&vehicle=car&points_encoded=false&key=${apiKey}`;
-
+        //const apiUrl = `https://graphhopper.com/api/1/route?point=${this.startPlace.lat},${this.startPlace.lon}&point=${this.endPlace.lat},${this.endPlace.lon}&vehicle=car&points_encoded=false&key=${apiKey}`;
+        // const apiUrl = `https://graphhopper.com/api/1/route?point=${this.startPlace.lat},${this.startPlace.lon}&point=${this.endPlace.lat},${this.endPlace.lon}&vehicle=foot&points_encoded=false&key=${apiKey}`;
+        const apiUrl = `https://graphhopper.com/api/1/route?point=${this.startPlace.lat},${this.startPlace.lon}&point=${this.endPlace.lat},${this.endPlace.lon}&vehicle=scooter&points_encoded=false&key=${apiKey}`;
         // Gửi yêu cầu API và xử lý kết quả
         fetch(apiUrl)
           .then(response => response.json())
           .then(data => {
+            debugger
+            const route = data.paths[0];
+            console.log('Độ dài quãng đường GraphHopper: ', route.distance, 'm');
+            console.log('Thời gian di chuyển của GraphHopper: ', Math.round(route.time/1000), 'giây');
             // Lấy đối tượng geometry từ kết quả API
             const geometry = data.paths[0].points;
-
+            console.log('Số điểm trên đường đi của GraphHopper: ', geometry.coordinates.length);
             let polyline = [];
             geometry.coordinates.forEach(element => {
               polyline.push([element[1], element[0]]);
@@ -208,21 +217,25 @@ export default {
       if (this.startPlace != null && this.endPlace != null) {
 
         // Tạo URL API với loại phương tiện là xe máy
-        const apiUrl = `https://router.project-osrm.org/route/v1/driving/${this.startPlace.lon},${this.startPlace.lat};${this.endPlace.lon},${this.endPlace.lat}?geometries=geojson`;
-
+        //const apiUrl = `https://router.project-osrm.org/route/v1/driving/${this.startPlace.lon},${this.startPlace.lat};${this.endPlace.lon},${this.endPlace.lat}?geometries=geojson`;
+        //const apiUrl = `https://router.project-osrm.org/route/v1/walking/${this.startPlace.lon},${this.startPlace.lat};${this.endPlace.lon},${this.endPlace.lat}?geometries=geojson`;
+        const apiUrl = `https://router.project-osrm.org/route/v1/driving-motorbike/${this.startPlace.lon},${this.startPlace.lat};${this.endPlace.lon},${this.endPlace.lat}?geometries=geojson`;
         // Gửi yêu cầu API và xử lý kết quả
         fetch(apiUrl) 
           .then(response => response.json())
           .then(data => {
+            debugger
+            const route = data.routes[0];
+            console.log('Độ dài quãng đường OSRM: ', route.distance, 'm');
+            console.log('Thời gian di chuyển của OSRM: ',route.duration , 'giây');
             // Lấy đối tượng geometry từ kết quả API
             const geometry = data.routes[0].geometry;
-
+            console.log('Số điểm trên đường đi của OSRM: ', geometry.coordinates.length);
             let polyline = [];
             geometry.coordinates.forEach(element => {
               polyline.push([element[1], element[0]]);
             });
             this.showRoad(polyline, "purple");
-            console.log('Thông tin tuyến đường cho xe máy:', data);
           })
           .catch(error => {
             console.error('Lỗi khi gọi API GraphHopper:', error);
@@ -236,15 +249,35 @@ export default {
 
         const apiKey = 'SJGJ0fLQHbpJG8UtoplZe72PpVPMXYQVuVgrMYoOYjA'
         // Tạo URL API với loại phương tiện là xe máy
-        const apiUrl = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=polyline&apiKey=${apiKey}`;
-
+        // const apiUrl1 = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=summary&apiKey=${apiKey}`;
+        // const apiUrl1 = `https://router.hereapi.com/v8/routes?transportMode=pedestrian&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=summary&apiKey=${apiKey}`;
+        const apiUrl1 = `https://router.hereapi.com/v8/routes?transportMode=scooter&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=summary&apiKey=${apiKey}`;
         // Gửi yêu cầu API và xử lý kết quả
-        fetch(apiUrl)
+        fetch(apiUrl1)
           .then(response => response.json())
           .then(data => {
+            debugger
+            const summary = data.routes[0].sections[0].summary;
+            console.log('Độ dài quãng đường HERE: ', summary.length, 'm');
+            console.log('Thời gian di chuyển của HERE: ', summary.baseDuration, 'giây');
+          })
+          .catch(error => {
+            console.error('Lỗi khi gọi API GraphHopper:', error);
+          });
+
+
+        //const apiUrl2 = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=polyline&apiKey=${apiKey}`;
+        // const apiUrl2 = `https://router.hereapi.com/v8/routes?transportMode=pedestrian&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=polyline&apiKey=${apiKey}`;
+        const apiUrl2 = `https://router.hereapi.com/v8/routes?transportMode=scooter&origin=${this.startPlace.lat},${this.startPlace.lon}&destination=${this.endPlace.lat},${this.endPlace.lon}&return=polyline&apiKey=${apiKey}`;
+        // Gửi yêu cầu API và xử lý kết quả
+        fetch(apiUrl2)
+          .then(response => response.json())
+          .then(data => {
+            debugger
             // Lấy đối tượng geometry từ kết quả API
             const encodePolyline = data.routes[0].sections[0].polyline;
             let decodePolyline = polylineEncoded.decode(encodePolyline).polyline;
+            console.log('Số điểm trên đường đi của HERE: ', decodePolyline.length);
             this.showRoad(decodePolyline, "green");
           })
           .catch(error => {
